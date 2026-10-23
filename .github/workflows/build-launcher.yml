@@ -16,23 +16,37 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout project
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Java 17
+      - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "17"
 
-      - name: Build launcher APK
-        uses: gradle/gradle-build-action@v3
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "8.7"
-          build-root-directory: launcher
-          arguments: assembleDebug
 
-      - name: Upload APK
+      - name: Check project files
+        run: |
+          ls -la
+          ls -la launcher
+          test -f launcher/settings.gradle || test -f launcher/settings.gradle.kts
+          test -d launcher/app
+
+      - name: Build debug APK
+        working-directory: launcher
+        run: gradle assembleDebug --stacktrace
+
+      - name: Verify APK
+        run: |
+          find launcher -type f -name "*.apk"
+          test -f launcher/app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Upload APK only
         uses: actions/upload-artifact@v4
         with:
           name: android-tv-launcher-debug-apk
